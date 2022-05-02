@@ -1,3 +1,7 @@
+import Cookies from "js-cookie";
+
+export const getTokenCookie = () => Cookies.get("token");
+
 export const setTokenCookie = (token: string) => {
   fetch("/api/login", {
     method: "post",

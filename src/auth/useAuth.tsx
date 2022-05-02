@@ -11,6 +11,7 @@ import "firebase/auth";
 import initFirebase from "./initFirebase";
 import { removeTokenCookie, setTokenCookie } from "./tokenCookies";
 
+// initializw firebase
 initFirebase();
 
 interface IAuthContext {
