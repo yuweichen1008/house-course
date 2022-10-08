@@ -6,16 +6,14 @@ import {
   FunctionComponent,
 } from "react";
 import { useRouter } from "next/router";
-import firebase from "firebase/app";
-import "firebase/auth";
-import initFirebase from "./initFirebase";
+import { User, signOut, onAuthStateChanged } from "firebase/auth";
 import { removeTokenCookie, setTokenCookie } from "./tokenCookies";
+import { auth } from "../../firebase";
 
 // initializw firebase
-initFirebase();
 
 interface IAuthContext {
-  user: firebase.User | null;
+  user: User | null;
   logout: () => void;
   authenticated: boolean;
 }
@@ -26,15 +24,16 @@ const AuthContext = createContext<IAuthContext>({
   authenticated: false,
 });
 
-export const AuthProvider: FunctionComponent = ({ children }) => {
-  const [user, setUser] = useState<firebase.User | null>(null);
+interface AuthProviderProps {
+  children: React.ReactNode
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null)
   const router = useRouter();
 
   const logout = () => {
-    firebase
-      .auth()
-      .signOut()
-      .then(() => {
+    signOut(auth).then(() => {
         router.push("/");
       })
       .catch((e) => {
@@ -43,23 +42,23 @@ export const AuthProvider: FunctionComponent = ({ children }) => {
   };
 
   useEffect(() => {
-    const cancelAuthListener = firebase
-      .auth()
-      .onIdTokenChanged(async (user) => {
-        if (user) {
-          const token = await user.getIdToken();
-          setTokenCookie(token);
-          setUser(user);
-        } else {
-          removeTokenCookie();
-          setUser(null);
-        }
-      });
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const uid = user.uid;
+        setUser(user)
+        // setLoading(false)
+      } else {
+        // User is signed out
+        setUser(null)
+        // setLoading(false)
+        router.push('/login')
+      }
 
-    return () => {
-      cancelAuthListener();
-    };
-  }, []);
+      // setInitialLoading(false)
+    })
+  }, [auth]);
 
   return (
     <AuthContext.Provider value={{ user, logout, authenticated: !!user }}>
